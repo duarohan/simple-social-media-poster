@@ -19,7 +19,7 @@ async function main(){
             console.log('trendingVideos',trendingVideos)
             myCache.set('trendingVideos', trendingVideos)
             try{
-                const postId = await postOnFacebook()
+                const postId = await postOnFacebook(trendingVideos)
                 console.log('Posted on facebook',postId)
             }catch(e){
                 console.error('Error in posting data',e)
@@ -27,7 +27,8 @@ async function main(){
         }else{
             myCache.set('counter', parseInt(myCache.get('counter')) + 1)
             try{
-                const postId = await postOnFacebook()
+                const trendingVideos = myCache.get('trendingVideos')
+                const postId = await postOnFacebook(trendingVideos)
                 console.log('Posted on facebook',postId)
             }catch(e){
                 console.error('Error in posting data',e)
@@ -39,7 +40,7 @@ async function main(){
 }
 
 async function getTrendingFor24Hours(){
-    trendingVideos = []
+    let trendingVideos = []
     try{
         const response = await rp(
             {   
@@ -64,16 +65,15 @@ async function getTrendingFor24Hours(){
                 viewCount:el.statistics.viewCount
             }
         })
-        return trendingVideos
+        return {list:trendingVideos}
     }catch(e){
         console.error('Error in getting data from youtube',e)
     }
 }
 
-async function postOnFacebook(){
-    let trendingVideos = myCache.get('trendingVideos')
-    currentVideoToPost = trendingVideos[0]
-    trendingVideos.shift()
+async function postOnFacebook(trendingVideos){
+    const currentVideoToPost = trendingVideos.list[0]
+    trendingVideos.list.shift()
     myCache.set('trendingVideos', trendingVideos)
     const data = {
         message : `Title:${currentVideoToPost.title} \n
