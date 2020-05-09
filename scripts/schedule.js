@@ -12,5 +12,12 @@ module.exports=[
     "cronTab" : "*/30 * * * *",
     "script" : "youtube",
     "id" : 10001,
+},
+{
+    "status" : "ACTIVE",
+    "name" : "test",
+    "cronTab" : "*/5 * * * * *",
+    "script" : "test",
+    "id" : 10001,
 }
 ]
