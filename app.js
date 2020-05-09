@@ -5,11 +5,11 @@ const myCache = new NodeCache({stdTTL: 4200, checkperiod: 120});
 
 setInterval(async function(){
     await main()
-},3600000)
+},1800 * 1000)
 
 async function main(){
     try{
-        if (!myCache.get('counter') || myCache.get('counter') === 24){
+        if (!myCache.get('counter') || myCache.get('counter') === 48){
             myCache.set('counter', 1)
             const trendingVideos = await getTrendingFor24Hours()
             console.log('trendingVideos',trendingVideos)
