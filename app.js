@@ -12,25 +12,29 @@ setInterval(async function(){
 },120000)
 
 async function main(){
-    if (!myCache.get('counter') || myCache.get('counter') === 24){
-        myCache.set('counter', 1)
-        const trendingVideos = await getTrendingFor24Hours()
-        console.log('trendingVideos',trendingVideos)
-        myCache.set('trendingVideos', trendingVideos)
-        try{
-            const postId = await postOnFacebook()
-            console.log('Posted on facebook',postId)
-        }catch(e){
-            console.error('Error in posting data',e)
+    try{
+        if (!myCache.get('counter') || myCache.get('counter') === 24){
+            myCache.set('counter', 1)
+            const trendingVideos = await getTrendingFor24Hours()
+            console.log('trendingVideos',trendingVideos)
+            myCache.set('trendingVideos', trendingVideos)
+            try{
+                const postId = await postOnFacebook()
+                console.log('Posted on facebook',postId)
+            }catch(e){
+                console.error('Error in posting data',e)
+            }
+        }else{
+            myCache.set('counter', parseInt(myCache.get('counter')) + 1)
+            try{
+                const postId = await postOnFacebook()
+                console.log('Posted on facebook',postId)
+            }catch(e){
+                console.error('Error in posting data',e)
+            }
         }
-    }else{
-        myCache.set('counter', parseInt(myCache.get('counter')) + 1)
-        try{
-            const postId = await postOnFacebook()
-            console.log('Posted on facebook',postId)
-        }catch(e){
-            console.error('Error in posting data',e)
-        }
+    }catch(e){
+        console.error('Error in a process',e)   
     }
 }
 
