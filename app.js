@@ -3,13 +3,9 @@ const rp = require('request-promise')
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache({stdTTL: 4200, checkperiod: 120});
 
-// setInterval(async function(){
-//     await main()
-// },3600000)
-
 setInterval(async function(){
     await main()
-},120000)
+},3600000)
 
 async function main(){
     try{
