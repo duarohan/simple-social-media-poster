@@ -1,0 +1,33 @@
+{
+  "name": "post-it",
+  "version": "1.0.0",
+  "description": "post cron on social media",
+  "main": "app.js",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "morgan": "^1.10.0",
+    "node-cache": "^5.1.0",
+    "node-cron": "^2.0.3",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duarohan/PostIt.git"
+  },
+  "keywords": [
+    "auto-post",
+    "schedule-post",
+    "post-on-facebook"
+  ],
+  "author": "Rohan D",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/duarohan/PostIt/issues"
+  },
+  "homepage": "https://github.com/duarohan/PostIt#readme"
+}
