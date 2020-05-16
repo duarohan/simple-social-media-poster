@@ -2,18 +2,40 @@ require('dotenv').config()
 const rp = require('request-promise')
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache({stdTTL: 4200, checkperiod: 120});
-
+/**
+ * Cache objects being used-
+ * trendingVideoCounter - maintains the count of when to poll youtube for trending videos again
+ * postedVideos - Maintains a set of posted videos from last 4 days. 
+ *                1. Works on First In Last Out Stack of 96 elements (24 * 4). 
+ *                2. List gets updated hourly.(FILO)
+ *                
+ * trendingVideos - Maintains a set of 50 or less fresh trendingVideos
+ *                  1. The whole list gets generated after completing 24 hr. from the start
+ *                  2. In pre-processing stage, the new videos are matched with alreadyPosted videos are removed
+ *                  3. This list gets updated hourly,(FIFO)
+ *                   
+ */
 setInterval(async function(){
     await main()
-},1800 * 1000)
+},60 * 60 * 1000)
 
 async function main(){
     try{
-        if (!myCache.get('counter') || myCache.get('counter') === 48){
-            myCache.set('counter', 1)
+        let alreadyPosted = []
+        let postedVideos = []
+        if (!myCache.get('trendingVideoCounter') || myCache.get('trendingVideoCounter') === 24){
+            myCache.set('trendingVideoCounter', 1)
             const trendingVideos = await getTrendingFor24Hours()
-            console.log('trendingVideos',trendingVideos)
-            myCache.set('trendingVideos', trendingVideos)
+            const trendingVideosList = new Set(trendingVideos)
+            if (myCache.get('postedVideos')){
+                alreadyPosted = myCache.get('postedVideos')
+                postedVideos = new Set(alreadyPosted.list)
+            }else{
+                postedVideos = new Set([])
+            }
+            freshTrendingVideos = [...difference(trendingVideosList, postedVideos)]
+            console.log('freshTrendingVideos',freshTrendingVideos)
+            myCache.set('trendingVideos', {list: freshTrendingVideos})
             try{
                 const postId = await postOnFacebook(trendingVideos)
                 console.log('Posted on facebook',postId)
@@ -21,10 +43,10 @@ async function main(){
                 console.error('Error in posting data',e)
             }
         }else{
-            myCache.set('counter', parseInt(myCache.get('counter')) + 1)
+            myCache.set('trendingVideoCounter', parseInt(myCache.get('trendingVideoCounter')) + 1)
             try{
                 const trendingVideos = myCache.get('trendingVideos')
-                const postId = await postOnFacebook(trendingVideos)
+                const postId = await postOnFacebook(trendingVideos.list)
                 console.log('Posted on facebook',postId)
             }catch(e){
                 console.error('Error in posting data',e)
@@ -46,7 +68,7 @@ async function getTrendingFor24Hours(){
                     key: process.env.youtubeAccessToken,
                     chart : 'mostPopular',
                     part:'snippet,statistics',
-                    regionCode : 'IN',
+                    regionCode : process.env.regionCode,
                     maxResults:50
                 },
                 json: true
@@ -61,19 +83,18 @@ async function getTrendingFor24Hours(){
                 viewCount:el.statistics.viewCount
             }
         })
-        return {list:trendingVideos}
+        return trendingVideos
     }catch(e){
         console.error('Error in getting data from youtube',e)
     }
 }
 
-async function postOnFacebook(trendingVideos){
-    const currentVideoToPost = trendingVideos.list[0]
-    trendingVideos.list.shift()
-    myCache.set('trendingVideos', trendingVideos)
+async function postOnFacebook(videos){
+    const currentVideoToPost = videos[0]
+    videos.shift()
+    myCache.set('trendingVideos', {'list' : videos})
     const data = {
-        message : `Title:${currentVideoToPost.title} \n
-                Published On : ${currentVideoToPost.publishedAt} \n
+        message : `Published On : ${currentVideoToPost.publishedAt} \n
                 Channel Title : ${currentVideoToPost.channelTitle} \n
                 View Count : ${currentVideoToPost.viewCount}`,
         link :`https://www.youtube.com/watch?v=${currentVideoToPost.id}`
@@ -89,5 +110,26 @@ async function postOnFacebook(trendingVideos){
             json: true
         }
     )
+    //create a stack of 96 elements and pop and unshift when the list reaches 100
+    let alreadyPosted = []
+    if(myCache.get('postedVideos')){
+        const postedVideos = myCache.get('postedVideos')
+        alreadyPosted = postedVideos.list
+    } 
+    if(alreadyPosted.length <= 96){
+        alreadyPosted.unshift(currentVideoToPost.id)
+    }else{
+        alreadyPosted.pop
+        alreadyPosted.unshift(currentVideoToPost.id)
+    }
+    myCache.set('postedVideos',{'list':alreadyPosted})
     return postId
+}
+
+function difference(setA, setB) {
+    let _difference = new Set(setA)
+    for (let elem of setB) {
+        _difference.delete(elem)
+    }
+    return _difference
 }
