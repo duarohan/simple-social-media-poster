@@ -115,6 +115,7 @@ async function postOnFacebook(videos){
     if(myCache.get('postedVideos')){
         const postedVideos = myCache.get('postedVideos')
         alreadyPosted = postedVideos.list
+        console.log('alreadyPosted before',alreadyPosted)
     } 
     if(alreadyPosted.length <= 96){
         alreadyPosted.unshift(currentVideoToPost.id)
@@ -122,6 +123,7 @@ async function postOnFacebook(videos){
         alreadyPosted.pop
         alreadyPosted.unshift(currentVideoToPost.id)
     }
+    console.log('alreadyPosted after',alreadyPosted)
     myCache.set('postedVideos',{'list':alreadyPosted})
     return postId
 }
