@@ -26,15 +26,16 @@ async function main(){
         if (!myCache.get('trendingVideoCounter') || myCache.get('trendingVideoCounter') === 24){
             myCache.set('trendingVideoCounter', 1)
             const trendingVideos = await getTrendingFor24Hours()
-            const trendingVideosList = new Set(trendingVideos)
+            const trendingVideoIds = trendingVideos.map(el=>el.id)
+            const trendingVideosList = new Set(trendingVideoIds)
             if (myCache.get('postedVideos')){
                 alreadyPosted = myCache.get('postedVideos')
                 postedVideos = new Set(alreadyPosted.list)
             }else{
                 postedVideos = new Set([])
             }
-            freshTrendingVideos = [...difference(trendingVideosList, postedVideos)]
-            console.log('freshTrendingVideos',freshTrendingVideos)
+            const freshTrendingVideoIds = [...difference(trendingVideosList, postedVideos)]
+            const freshTrendingVideos = trendingVideos.filter(el=> freshTrendingVideoIds.includes(el.id))
             myCache.set('trendingVideos', {list: freshTrendingVideos})
             try{
                 const postId = await postOnFacebook(trendingVideos)
@@ -115,7 +116,6 @@ async function postOnFacebook(videos){
     if(myCache.get('postedVideos')){
         const postedVideos = myCache.get('postedVideos')
         alreadyPosted = postedVideos.list
-        console.log('alreadyPosted before',alreadyPosted)
     } 
     if(alreadyPosted.length <= 96){
         alreadyPosted.unshift(currentVideoToPost.id)
@@ -123,7 +123,6 @@ async function postOnFacebook(videos){
         alreadyPosted.pop
         alreadyPosted.unshift(currentVideoToPost.id)
     }
-    console.log('alreadyPosted after',alreadyPosted)
     myCache.set('postedVideos',{'list':alreadyPosted})
     return postId
 }
